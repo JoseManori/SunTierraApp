@@ -12,19 +12,20 @@ import os
 # ==========================================
 st.set_page_config(page_title="SunTierra & Mar y Mar Farms", layout="wide")
 
-# Header Branding
-col_logo, col_text = st.columns([1, 4])
+# Header Branding - Adjusted for a larger logo
+col_logo, col_text = st.columns([2, 3]) 
 
 with col_logo:
     if os.path.exists("logo.png"):
-        st.image("logo.png", width=150)
+        # Increased width to 350 for better readability
+        st.image("logo.png", width=350) 
     else:
-        st.title("🚜") # Fallback if logo isn't uploaded yet
+        st.title("🚜")
 
 with col_text:
     st.title("SunTierra & Mar y Mar Farms")
+    st.subheader("Operations & Dynamic Agronomy Hub")
     st.caption("Created by Mano")
-    st.markdown("**Operations & Dynamic Agronomy Hub**")
 
 # API Configuration
 try:
@@ -45,22 +46,25 @@ with tab1:
     
     if ticker_input:
         with st.spinner("Analyzing Market..."):
-            ticker = yf.Ticker(ticker_input)
-            info = ticker.info
-            if 'shortName' in info:
-                st.subheader(f"{info.get('longName')} ({ticker_input})")
-                c1, c2, c3 = st.columns(3)
-                c1.metric("Price", f"${info.get('currentPrice')}")
-                c2.metric("Target", f"${info.get('targetMeanPrice')}")
-                c3.metric("Status", str(info.get('recommendationKey')).title())
-                
-                st.divider()
-                st.markdown("### Interactive History")
-                timeframe = st.selectbox("Timeline:", ["1y", "3y", "5y", "max"], index=1)
-                hist = ticker.history(period=timeframe)
-                st.line_chart(hist['Close'])
-            else:
-                st.error("Ticker not found.")
+            try:
+                ticker = yf.Ticker(ticker_input)
+                info = ticker.info
+                if 'shortName' in info:
+                    st.subheader(f"{info.get('longName')} ({ticker_input})")
+                    c1, c2, c3 = st.columns(3)
+                    c1.metric("Price", f"${info.get('currentPrice')}")
+                    c2.metric("Target", f"${info.get('targetMeanPrice')}")
+                    c3.metric("Status", str(info.get('recommendationKey')).title())
+                    
+                    st.divider()
+                    st.markdown("### Interactive History")
+                    timeframe = st.selectbox("Timeline:", ["1y", "3y", "5y", "max"], index=1)
+                    hist = ticker.history(period=timeframe)
+                    st.line_chart(hist['Close'])
+                else:
+                    st.error("Ticker not found.")
+            except Exception as e:
+                st.error(f"Error fetching data: {e}")
 
 # ==========================================
 # 3. DYNAMIC AGRONOMY & INFINITE QUIZ
@@ -84,7 +88,6 @@ with tab2:
                 response = model.generate_content(prompt)
                 st.session_state.agronomy_report = response.text
                 st.session_state.variety_quizzed = variety_input
-                # Reset quiz state for new variety
                 st.session_state.current_question = None
 
     if "agronomy_report" in st.session_state:
@@ -102,7 +105,6 @@ with tab2:
 
         st.info(st.session_state.current_question)
         
-        # Audio Reading
         if st.button("🔊 Read Question"):
             tts = gTTS(text=st.session_state.current_question, lang='en')
             audio_fp = io.BytesIO()
@@ -125,7 +127,8 @@ with tab2:
                 """
                 grade = grader_model.generate_content([grading_prompt, audio_part])
                 st.success(grade.text)
-                
-                if st.button("Get Next Question"):
-                    st.session_state.current_question = None
-                    st.rerun()
+        
+        # This button is now outside the "if audio_value" block so it stays visible
+        if st.button("🔄 Get Next Question"):
+            st.session_state.current_question = None
+            st.rerun()
